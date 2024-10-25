@@ -53,8 +53,8 @@ looker.plugins.visualizations.add({
   // Renderización de la visualización con los datos de Looker
   updateAsync: function(data, element, config, queryResponse, details, done) {
     // Validar que haya suficientes dimensiones y medidas
-    if (!queryResponse.fields || !queryResponse.fields.dimensions_like || !queryResponse.fields.measures_like ||
-        queryResponse.fields.dimensions_like.length < 2 || queryResponse.fields.measures_like.length < 1) {
+    if (!queryResponse.fields || !queryResponse.fields.dimensions || !queryResponse.fields.measures ||
+        queryResponse.fields.dimensions.length < 2 || queryResponse.fields.measures.length < 1) {
       this.addError({
         title: "Datos insuficientes",
         message: "Esta visualización requiere al menos dos dimensiones y una medida."
@@ -76,9 +76,9 @@ looker.plugins.visualizations.add({
       .attr("height", element.clientHeight);
 
     // Definir los campos
-    const xAxisDim0 = queryResponse.fields.dimensions_like[0].name;
-    const xAxisDim1 = queryResponse.fields.dimensions_like[1].name;
-    const yAxisMeasure0 = queryResponse.fields.measures_like[0].name;
+    const xAxisDim0 = queryResponse.fields.dimensions[0].name;
+    const xAxisDim1 = queryResponse.fields.dimensions[1].name;
+    const yAxisMeasure0 = queryResponse.fields.measures[0].name;
 
     // Extraer los valores únicos para el eje X
     const xAxisDim0unique = Array.from(new Set(data.map(d => d[xAxisDim0]?.value)));
