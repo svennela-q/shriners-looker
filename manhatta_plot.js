@@ -20,8 +20,8 @@ looker.plugins.visualizations.add({
     // Cargar D3.js desde CDN si no está definido
     if (typeof d3 === 'undefined') {
       let script = document.createElement("script");
-      script.src = "https://d3js.org/d3.v7.min.js"; // Puedes cambiar a la versión que prefieras
-      script.onload = () => this.setupVisualization(element, config);
+      script.src = "https://d3js.org/d3.v7.min.js"; // Cargar D3.js
+      script.onload = () => this.setupVisualization(element, config); // Configuración después de cargar D3
       document.head.appendChild(script);
     } else {
       this.setupVisualization(element, config);
@@ -52,6 +52,11 @@ looker.plugins.visualizations.add({
 
   // Renderización de la visualización con los datos de Looker
   updateAsync: function(data, element, config, queryResponse, details, done) {
+    // Verificar que la visualización está correctamente configurada
+    if (!this._chartGroup) {
+      this.setupVisualization(element, config);
+    }
+
     // Validar que haya suficientes dimensiones y medidas
     if (!queryResponse.fields || !queryResponse.fields.dimensions || !queryResponse.fields.measures ||
         queryResponse.fields.dimensions.length < 2 || queryResponse.fields.measures.length < 1) {
