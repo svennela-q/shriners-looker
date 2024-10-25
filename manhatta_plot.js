@@ -21,9 +21,13 @@ looker.plugins.visualizations.add({
     if (typeof d3 === 'undefined') {
       let script = document.createElement("script");
       script.src = "https://d3js.org/d3.v7.min.js"; // Cargar D3.js
-      script.onload = () => this.setupVisualization(element, config); // Configuración después de cargar D3
+      script.onload = () => {
+        this.setupVisualization(element, config);
+        this.d3Ready = true; // Indica que D3.js está cargado
+      };
       document.head.appendChild(script);
     } else {
+      this.d3Ready = true; // D3.js ya estaba cargado
       this.setupVisualization(element, config);
     }
   },
@@ -32,7 +36,7 @@ looker.plugins.visualizations.add({
   setupVisualization: function(element, config) {
     // Limpieza del contenido anterior
     element.innerHTML = ``;
-    
+
     // Definir márgenes
     const margin = { top: 20, right: 30, bottom: 50, left: 70 };
 
@@ -52,9 +56,10 @@ looker.plugins.visualizations.add({
 
   // Renderización de la visualización con los datos de Looker
   updateAsync: function(data, element, config, queryResponse, details, done) {
-    // Verificar que la visualización está correctamente configurada
-    if (!this._chartGroup) {
-      this.setupVisualization(element, config);
+    // Verificar que D3.js está listo antes de ejecutar la actualización
+    if (!this.d3Ready) {
+      console.log("D3.js aún no está cargado. Reintentando...");
+      return;
     }
 
     // Validar que haya suficientes dimensiones y medidas
