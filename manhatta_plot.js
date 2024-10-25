@@ -17,9 +17,22 @@ looker.plugins.visualizations.add({
 
   // Inicialización de la visualización
   create: function(element, config) {
+    // Cargar D3.js desde CDN si no está definido
+    if (typeof d3 === 'undefined') {
+      let script = document.createElement("script");
+      script.src = "https://d3js.org/d3.v7.min.js"; // Puedes cambiar a la versión que prefieras
+      script.onload = () => this.setupVisualization(element, config);
+      document.head.appendChild(script);
+    } else {
+      this.setupVisualization(element, config);
+    }
+  },
+
+  // Configuración de la visualización después de cargar D3.js
+  setupVisualization: function(element, config) {
     // Limpieza del contenido anterior
     element.innerHTML = ``;
-
+    
     // Definir márgenes
     const margin = { top: 20, right: 30, bottom: 50, left: 70 };
 
@@ -40,7 +53,8 @@ looker.plugins.visualizations.add({
   // Renderización de la visualización con los datos de Looker
   updateAsync: function(data, element, config, queryResponse, details, done) {
     // Validar que haya suficientes dimensiones y medidas
-    if (queryResponse.fields.dimensions_like.length < 2 || queryResponse.fields.measures_like.length < 1) {
+    if (!queryResponse.fields || !queryResponse.fields.dimensions_like || !queryResponse.fields.measures_like ||
+        queryResponse.fields.dimensions_like.length < 2 || queryResponse.fields.measures_like.length < 1) {
       this.addError({
         title: "Datos insuficientes",
         message: "Esta visualización requiere al menos dos dimensiones y una medida."
@@ -67,7 +81,7 @@ looker.plugins.visualizations.add({
     const yAxisMeasure0 = queryResponse.fields.measures_like[0].name;
 
     // Extraer los valores únicos para el eje X
-    const xAxisDim0unique = Array.from(new Set(data.map(d => d[xAxisDim0].value)));
+    const xAxisDim0unique = Array.from(new Set(data.map(d => d[xAxisDim0]?.value)));
 
     // Crear escalas
     const xScaleDim0 = d3.scaleBand()
@@ -76,11 +90,11 @@ looker.plugins.visualizations.add({
       .padding(0.1);
 
     const xScaleDim1 = d3.scaleLinear()
-      .domain([0, d3.max(data, d => d[xAxisDim1].value)])
+      .domain([0, d3.max(data, d => d[xAxisDim1]?.value || 0)])
       .range([0, xScaleDim0.bandwidth()]);
 
     const yScale = d3.scaleLinear()
-      .domain([0, d3.max(data, d => -Math.log10(d[yAxisMeasure0].value))])
+      .domain([0, d3.max(data, d => -Math.log10(d[yAxisMeasure0]?.value || 1))])
       .range([height, 0]);
 
     // Ejes
@@ -107,8 +121,8 @@ looker.plugins.visualizations.add({
       .enter().append("circle")
       .attr("class", "dot")
       .attr("r", 3)
-      .attr("cx", d => xScaleDim0(d[xAxisDim0].value) + xScaleDim1(d[xAxisDim1].value))
-      .attr("cy", d => yScale(-Math.log10(d[yAxisMeasure0].value)))
+      .attr("cx", d => xScaleDim0(d[xAxisDim0]?.value) + xScaleDim1(d[xAxisDim1]?.value || 0))
+      .attr("cy", d => yScale(-Math.log10(d[yAxisMeasure0]?.value || 1)))
       .style("fill", config.color_scheme[0] || "#1f77b4");
 
     // Línea de umbral de significancia
