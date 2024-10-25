@@ -20,14 +20,10 @@ looker.plugins.visualizations.add({
     // Cargar D3.js desde CDN si no está definido
     if (typeof d3 === 'undefined') {
       let script = document.createElement("script");
-      script.src = "https://d3js.org/d3.v7.min.js"; // Cargar D3.js
-      script.onload = () => {
-        this.setupVisualization(element, config);
-        this.d3Ready = true; // Indica que D3.js está cargado
-      };
+      script.src = "https://d3js.org/d3.v7.min.js"; // Puedes cambiar a la versión que prefieras
+      script.onload = () => this.setupVisualization(element, config);
       document.head.appendChild(script);
     } else {
-      this.d3Ready = true; // D3.js ya estaba cargado
       this.setupVisualization(element, config);
     }
   },
@@ -36,7 +32,7 @@ looker.plugins.visualizations.add({
   setupVisualization: function(element, config) {
     // Limpieza del contenido anterior
     element.innerHTML = ``;
-
+    
     // Definir márgenes
     const margin = { top: 20, right: 30, bottom: 50, left: 70 };
 
@@ -56,12 +52,6 @@ looker.plugins.visualizations.add({
 
   // Renderización de la visualización con los datos de Looker
   updateAsync: function(data, element, config, queryResponse, details, done) {
-    // Verificar que D3.js está listo antes de ejecutar la actualización
-    if (!this.d3Ready) {
-      console.log("D3.js aún no está cargado. Reintentando...");
-      return;
-    }
-
     // Validar que haya suficientes dimensiones y medidas
     if (!queryResponse.fields || !queryResponse.fields.dimensions || !queryResponse.fields.measures ||
         queryResponse.fields.dimensions.length < 2 || queryResponse.fields.measures.length < 1) {
@@ -104,7 +94,7 @@ looker.plugins.visualizations.add({
       .range([0, xScaleDim0.bandwidth()]);
 
     const yScale = d3.scaleLinear()
-      .domain([0, d3.max(data, d => -Math.log10(d[yAxisMeasure0]?.value || 1))])
+      .domain([0, d3.max(data, d => d[yAxisMeasure0]?.value || 0)]) // Sin conversión -log10
       .range([height, 0]);
 
     // Ejes
@@ -116,14 +106,7 @@ looker.plugins.visualizations.add({
       .style("text-anchor", "end");
 
     this._chartGroup.append("g")
-      .call(d3.axisLeft(yScale).tickFormat(d3.format(".1f")))
-      .append("text")
-      .attr("fill", "#000")
-      .attr("x", -margin.left)
-      .attr("y", -10)
-      .attr("dy", ".71em")
-      .attr("text-anchor", "start")
-      .text("-log10(p-value)");
+      .call(d3.axisLeft(yScale).tickFormat(d3.format(".1f")));
 
     // Dibujar los puntos
     this._chartGroup.selectAll(".dot")
@@ -132,7 +115,7 @@ looker.plugins.visualizations.add({
       .attr("class", "dot")
       .attr("r", 3)
       .attr("cx", d => xScaleDim0(d[xAxisDim0]?.value) + xScaleDim1(d[xAxisDim1]?.value || 0))
-      .attr("cy", d => yScale(-Math.log10(d[yAxisMeasure0]?.value || 1)))
+      .attr("cy", d => yScale(d[yAxisMeasure0]?.value || 0))  // Usamos el valor tal cual
       .style("fill", config.color_scheme[0] || "#1f77b4");
 
     // Línea de umbral de significancia
